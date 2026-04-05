@@ -30,8 +30,30 @@ export interface AppsResponse {
   apps: AppSummary[]
 }
 
+export interface CategorySummary {
+  name: string
+  total_secs: number
+}
+
+export interface InsightResponse {
+  avg_secs: number
+  today_secs: number
+  delta_secs: number
+  score: number
+  grade: string
+  verdict: string
+  is_bad: boolean
+  peak_hour: number
+  hourly: number[]
+  categories: CategorySummary[]
+  carplay: AppSummary[]
+  best_day: DaySummary | null
+  worst_day: DaySummary | null
+  by_day: DaySummary[]
+}
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { next: { revalidate: 300 } })
+  const res = await fetch(`${API_URL}${path}`, { cache: 'no-store' })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
@@ -40,4 +62,5 @@ export const api = {
   today: () => get<TodayResponse>('/api/today'),
   week: () => get<WeekResponse>('/api/week'),
   apps: () => get<AppsResponse>('/api/apps'),
+  insight: () => get<InsightResponse>('/api/insight'),
 }
