@@ -28,7 +28,7 @@ export default function Sidebar() {
   const { device, period, dateLabel, setDevice, setPeriod, navigate } = useFilter()
 
   return (
-    <aside className="hidden md:flex flex-col w-56 min-h-screen bg-[#111111] border-r border-white/5 shrink-0">
+    <aside className="hidden md:flex flex-col w-56 min-h-dvh bg-[#111111] border-r border-white/5 shrink-0 sticky top-0">
       {/* Logo */}
       <div className="px-5 pt-6 pb-4 border-b border-white/5">
         <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-2">

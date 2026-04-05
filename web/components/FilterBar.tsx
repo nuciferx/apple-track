@@ -18,7 +18,7 @@ export default function FilterBar() {
   const { device, period, dateLabel, setDevice, setPeriod, navigate } = useFilter()
 
   return (
-    <div className="md:hidden sticky top-0 z-20 bg-[#0f0f0f]/95 backdrop-blur border-b border-white/5 px-3 py-2 space-y-2">
+    <div className="md:hidden sticky top-0 z-20 bg-[#0f0f0f]/95 backdrop-blur-sm border-b border-white/5 px-3 py-2 space-y-2">
       {/* Device row */}
       <div className="flex gap-1 overflow-x-auto no-scrollbar">
         {DEVICES.map(d => (

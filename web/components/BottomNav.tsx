@@ -12,7 +12,7 @@ const tabs = [
 export default function BottomNav() {
   const path = usePathname()
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#1a1a1a] border-t border-white/10 flex pb-safe">
+    <nav className="md:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[#1a1a1a] border-t border-white/10 flex pb-safe z-30">
       {tabs.map(t => (
         <Link
           key={t.href}
