@@ -2,18 +2,21 @@
 sync/.venv/
 sync/__pycache__/
 *.pyc
-*.pyo
 
 # Secrets
 sync/.env
 worker/.env
+.env.local
 
 # Node
+node_modules/
 web/node_modules/
 worker/node_modules/
+.next/
 web/.next/
 
 # Vercel
+.vercel/
 web/.vercel/
 
 # OS
