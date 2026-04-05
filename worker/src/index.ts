@@ -100,6 +100,7 @@ interface SheetRow {
   start_time: string;  // ISO string
   end_time: string;
   date_local: string;  // YYYY-MM-DD
+  device: string;      // mac | iphone | ipad
 }
 
 async function getFirstSheetName(token: string, sheetId: string): Promise<string> {
@@ -113,7 +114,7 @@ async function getFirstSheetName(token: string, sheetId: string): Promise<string
 
 async function fetchSheetRows(token: string, sheetId: string): Promise<SheetRow[]> {
   const sheetName = await getFirstSheetName(token, sheetId);
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(sheetName)}!A:G`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(sheetName)}!A:H`;
   const resp = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -133,7 +134,24 @@ async function fetchSheetRows(token: string, sheetId: string): Promise<SheetRow[
     start_time: r[4] ?? "",
     end_time: r[5] ?? "",
     date_local: r[6] ?? "",
+    device: r[7] ?? "mac",
   }));
+}
+
+function parseFilters(url: URL): { device: string; from: string; to: string } {
+  return {
+    device: url.searchParams.get("device") ?? "all",
+    from: url.searchParams.get("from") ?? "",
+    to: url.searchParams.get("to") ?? todayLocal(),
+  };
+}
+
+function applyFilters(rows: SheetRow[], device: string, from: string, to: string): SheetRow[] {
+  let r = rows;
+  if (from) r = r.filter((row) => row.date_local >= from);
+  if (to) r = r.filter((row) => row.date_local <= to);
+  if (device !== "all") r = r.filter((row) => row.device === device);
+  return r;
 }
 
 // ── Aggregation helpers ───────────────────────────────────────────────────────
@@ -334,38 +352,45 @@ export default {
       return errorResponse(`Sheet read failed: ${e}`, 500, origin);
     }
 
-    // GET /api/today
-    if (path === "/api/today") {
-      const today = todayLocal();
-      const rows = allRows.filter((r) => r.date_local === today);
-      const apps = aggregateByApp(rows);
-      const total_secs = apps.reduce((s, a) => s + a.total_secs, 0);
-      return jsonResponse({ date: today, total_secs, apps }, 200, origin);
+    // GET /api/devices — list distinct devices in the sheet
+    if (path === "/api/devices") {
+      const devices = [...new Set(allRows.map((r) => r.device))].filter(Boolean);
+      return jsonResponse({ devices }, 200, origin);
     }
 
-    // GET /api/week
+    // GET /api/today?from=&to=&device=
+    if (path === "/api/today") {
+      const { device, from, to } = parseFilters(url);
+      const today = to || todayLocal();
+      const rows = applyFilters(allRows, device, from || today, today);
+      const apps = aggregateByApp(rows);
+      const total_secs = apps.reduce((s, a) => s + a.total_secs, 0);
+      return jsonResponse({ date: today, total_secs, apps, device }, 200, origin);
+    }
+
+    // GET /api/week?from=&to=&device=
     if (path === "/api/week") {
-      const since = dateNDaysAgo(7);
-      const rows = allRows.filter((r) => r.date_local >= since);
+      const { device, from, to } = parseFilters(url);
+      const rows = applyFilters(allRows, device, from || dateNDaysAgo(7), to);
       const by_day = aggregateByDay(rows);
       const by_app = aggregateByApp(rows).slice(0, 10);
       const total_secs = by_day.reduce((s, d) => s + d.total_secs, 0);
       const avg_secs = by_day.length ? Math.round(total_secs / by_day.length) : 0;
-      return jsonResponse({ since, total_secs, avg_secs, by_day, by_app }, 200, origin);
+      return jsonResponse({ from, to, total_secs, avg_secs, by_day, by_app, device }, 200, origin);
     }
 
-    // GET /api/apps
+    // GET /api/apps?from=&to=&device=
     if (path === "/api/apps") {
-      const since = dateNDaysAgo(30);
-      const rows = allRows.filter((r) => r.date_local >= since);
+      const { device, from, to } = parseFilters(url);
+      const rows = applyFilters(allRows, device, from || dateNDaysAgo(30), to);
       const apps = aggregateByApp(rows);
-      return jsonResponse({ apps }, 200, origin);
+      return jsonResponse({ apps, device }, 200, origin);
     }
 
-    // GET /api/insight
+    // GET /api/insight?from=&to=&device=
     if (path === "/api/insight") {
-      const since = dateNDaysAgo(7);
-      const rows = allRows.filter((r) => r.date_local >= since);
+      const { device, from, to } = parseFilters(url);
+      const rows = applyFilters(allRows, device, from || dateNDaysAgo(7), to);
 
       const by_day = aggregateByDay(rows);
       const total_secs = rows.reduce((s, r) => s + r.duration_secs, 0);
@@ -383,9 +408,8 @@ export default {
       const best_day = sorted_days[0] ?? null;
       const worst_day = sorted_days[sorted_days.length - 1] ?? null;
 
-      // Compare today vs last 7d avg
       const today = todayLocal();
-      const today_rows = allRows.filter((r) => r.date_local === today);
+      const today_rows = applyFilters(allRows, device, today, today);
       const today_secs = today_rows.reduce((s, r) => s + r.duration_secs, 0);
       const delta_secs = today_secs - avg_secs;
 
@@ -395,7 +419,7 @@ export default {
         peak_hour, hourly,
         categories, carplay,
         best_day, worst_day,
-        by_day,
+        by_day, device,
       }, 200, origin);
     }
 

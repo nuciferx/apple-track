@@ -1,5 +1,11 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787'
 
+export interface FilterParams {
+  device?: string
+  from?: string
+  to?: string
+}
+
 export interface AppSummary {
   app_name: string
   bundle_id: string
@@ -16,18 +22,22 @@ export interface TodayResponse {
   date: string
   total_secs: number
   apps: AppSummary[]
+  device: string
 }
 
 export interface WeekResponse {
-  since: string
+  from: string
+  to: string
   total_secs: number
   avg_secs: number
   by_day: DaySummary[]
   by_app: AppSummary[]
+  device: string
 }
 
 export interface AppsResponse {
   apps: AppSummary[]
+  device: string
 }
 
 export interface CategorySummary {
@@ -50,17 +60,27 @@ export interface InsightResponse {
   best_day: DaySummary | null
   worst_day: DaySummary | null
   by_day: DaySummary[]
+  device: string
 }
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { cache: 'no-store' })
+function buildUrl(path: string, params: FilterParams): string {
+  const q = new URLSearchParams()
+  if (params.device && params.device !== 'all') q.set('device', params.device)
+  if (params.from) q.set('from', params.from)
+  if (params.to) q.set('to', params.to)
+  const qs = q.toString()
+  return `${API_URL}${path}${qs ? '?' + qs : ''}`
+}
+
+async function get<T>(path: string, params: FilterParams = {}): Promise<T> {
+  const res = await fetch(buildUrl(path, params), { cache: 'no-store' })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
 
 export const api = {
-  today: () => get<TodayResponse>('/api/today'),
-  week: () => get<WeekResponse>('/api/week'),
-  apps: () => get<AppsResponse>('/api/apps'),
-  insight: () => get<InsightResponse>('/api/insight'),
+  today: (p: FilterParams = {}) => get<TodayResponse>('/api/today', p),
+  week:  (p: FilterParams = {}) => get<WeekResponse>('/api/week', p),
+  apps:  (p: FilterParams = {}) => get<AppsResponse>('/api/apps', p),
+  insight:(p: FilterParams = {}) => get<InsightResponse>('/api/insight', p),
 }
