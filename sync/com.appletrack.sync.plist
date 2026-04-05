@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.appletrack.sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/nucifer/Library/CloudStorage/GoogleDrive-ideaplanstudio@gmail.com/ไดรฟ์ของฉัน/01 project/ai/apple-track/sync/.venv/bin/python3</string>
+    <string>/Users/nucifer/Library/CloudStorage/GoogleDrive-ideaplanstudio@gmail.com/ไดรฟ์ของฉัน/01 project/ai/apple-track/sync/sync.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/nucifer/Library/CloudStorage/GoogleDrive-ideaplanstudio@gmail.com/ไดรฟ์ของฉัน/01 project/ai/apple-track/sync</string>
+  <key>StartInterval</key>
+  <integer>10800</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/appletrack.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/appletrack.err</string>
+</dict>
+</plist>
